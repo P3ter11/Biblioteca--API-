@@ -3,99 +3,117 @@ const api = "https://striveschool-api.herokuapp.com/books";
 const searchButton = document.getElementById('searchButton');
 const inputSearch = document.getElementById('inputSearch');
 
+let booksToCart = [];
+let priceCart = 0;
+let modalContainer = document.querySelector('.modal-body');
+let liveInput = document.getElementById('inputSearch');
+
 function getBooks(){
-    fetch(api)
-    .then((response)=>{return response.json()})
-    .then(json => {
-        let cont = document.querySelector(".row");
-
-    cont.innerHTML = json.map((book) => {
-      return ` <div class='col col-4'> <div class="card mb-4 shadow-sm">
-              <img src='${book.img}' />
-
-              <div class="card-body">
-                
-                <div
-                  class="d-flex justify-content-between align-items-center"
-                >
-                  
-                  <small class="text-muted">${book.title}</small>
-
-                  <button class="btn btn-primary" onclick="addList()">Add List</button>
-                </div>
-              </div>
-            </div> </div>`
-  }).join("")
-})
-      
-    .catch(error => console.log(error))
+  fetch(api)
+  .then((response)=>{return response.json()})
+  .then(json => cyclebooks(json))      
+  .catch(error => console.log(error))
 
 }
 
 getBooks();
 
-const searchInput = document.getElementById('searchInput');
-const resultsContainer = document.getElementById('results');
+let activeResults;
+let containerBooks = document.getElementById('containerBooks');
 
-searchInput.addEventListener('input', () => {
-  let query = searchInput.value.trim(); // Ottieni il valore dell'input e rimuovi eventuali spazi iniziali e finali
+function cyclebooks(data, savedResults = true){
+  if(savedResults)
+    activeResults = data;
 
-  if (query.length > 0) {
-    fetch(api+`/search?q=${query}`) // Sostituisci con l'URL dell'API
-      .then(response => response.json())
-      .then(data => {
-        // Filtra i risultati in base alla query dell'utente
-        const filteredResults = data.filter(result => result.name.toLowerCase().includes(query.toLowerCase()));
+  containerBooks.innerHTML = "";
+  data.forEach((book) =>{
+    createTemplate(book);
+  })
+}
 
-        // Pulisci i risultati precedenti
-        resultsContainer.innerHTML = '';
 
-        // Mostra i nuovi risultati filtrati
-        filteredResults.forEach(result => {
-          const resultElement = document.createElement('div');
-          resultElement.textContent = result.name; // Sostituisci 'name' con la chiave appropriata dei risultati dell'API
-          resultsContainer.appendChild(resultElement);
-        });
-      })
-      .catch(error => {
-        console.error('Si è verificato un errore durante la ricerca:', error);
-      });
-  } else {
-    // Se l'input è vuoto, pulisci i risultati
-    resultsContainer.innerHTML = '';
+
+function createTemplate(book){
+
+  let colBook = document.createElement('div');
+  colBook.classList.add('col', 'col-4', 'mb-3');
+
+  let bookBox = document.createElement('div');
+  bookBox.classList.add('card', 'text-center');
+
+  let bookImg = document.createElement('img');
+  bookImg.classList.add('card-img-top');
+  bookImg.src = book.img;
+
+  let bodyCard = document.createElement('div');
+  bodyCard.classList.add('card-body');
+
+  let bookTitle = document.createElement('h6');
+  bookTitle.innerText = book.title;
+
+  let buttonBook = document.createElement('button');
+  buttonBook.classList.add('btn', 'btn-primary', 'm-2');
+  buttonBook.innerText = 'Add to Cart';
+
+  let buttonHide = document.createElement('button');
+  buttonHide.classList.add('btn', 'btn-danger', 'm-2');
+  buttonHide.innerText = "Hide";
+
+  bodyCard.append(bookTitle, buttonBook, buttonHide);
+  bookBox.append(bookImg, bodyCard);
+  colBook.appendChild(bookBox);
+  containerBooks.appendChild(colBook);
+
+  buttonBook.addEventListener("click", ()=> {
+     bookBox.classList.toggle('added');
+     if(bookBox.classList.contains('added')){
+        addToCart(book.title, book.price);
+        buttonBook.innerText = "Remove to Cart";
+     }
+     else{
+      removeToCart(book.title, book.price);
+      buttonBook.innerText = "Add to Cart";
+     }
+
+    });
+
+    buttonHide.addEventListener("click", () =>{
+      bookBox.classList.add('d-none');
+    })
+
   }
-});
 
+function addToCart(title, price){
+  booksToCart.push(title);
+  priceCart += price;
+  console.log(booksToCart, priceCart.toFixed(2));
+}
 
+function removeToCart(title, price) {
+  priceCart -= price;
+  booksToCart = booksToCart.filter(string => string !== title);
+  console.log(booksToCart, priceCart.toFixed(2));
+}
 
+function showCart(){
+  for(item of booksToCart){
+    let li = document.createElement('li');
+    li.innerText = item;
+    modalContainer.appendChild(li);
+  }
 
-  /* let container = document.getElementById('containerCards');
-        let jsonData = json;
+  modalContainer.innerHTML += "<p>Total Price: <b>"+priceCart.toFixed(2)+"</b></p>";
+}
 
-        jsonData.forEach(element => {
-            console.log(element.img);
-            let bookCard = document.createElement('div');
-            bookCard.classList.add("card", "col-3");
+function clean(){
+  modalContainer.innerHTML = "";
+}
 
-            let imgCard = document.createElement('img');
-            imgCard.src = element.img; 
-            imgCard.classList.add("card-img-top");
+function liveSearch(){
+    let filteredResults = activeResults.filter((book) => {
+      return book.title.toLowerCase().includes(liveInput.value.toLowerCase().trim());
+    });
+  
+    cyclebooks(filteredResults, false);
+}
 
-            let cardBody = document.createElement('div');
-            cardBody.classList.add("card-body");
-
-            let titleCard = document.createElement('h3');
-            titleCard = element.title;
-            console.log(titleCard);
-
-            let buttonCarrello = document.createElement('button');
-            buttonCarrello.classList.add("btn","btn-primary");
-            buttonCarrello.innerText = "Add List";
-
-
-            cardBody.appendChild(titleCard, buttonCarrello);
-            bookCard.appendChild(imgCard, cardBody);
-            container.appendChild(bookCard);
-        });
-
-    }) */

@@ -8,3 +8,16 @@ img{
     object-fit: cover;
     border-radius: 5px;
 }
+
+.card-body{
+    display: flex;
+    flex-direction: column;
+}
+
+.card{
+    height: 600px;
+}
+
+.added{
+    background-color: green;
+}
